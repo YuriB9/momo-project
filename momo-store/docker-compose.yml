@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  backend:
+    image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-backend:latest
+    pull_policy: always
+    container_name: momo-backend
+    expose:
+      - "8081"
+    networks:
+      - momo-network
+
+  frontend:
+    image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-frontend:latest
+    pull_policy: always
+    container_name: momo-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - momo-network
+
+networks:
+  momo-network:
+    name: momo-network

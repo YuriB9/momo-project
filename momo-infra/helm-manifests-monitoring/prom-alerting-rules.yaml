@@ -1,0 +1,14 @@
+serverFiles:
+  alerting_rules.yml:
+    groups:
+    - name: Instances
+      rules:
+        - alert: BackendDown
+          expr: absent(up{app_kubernetes_io_name="momo-backend"})
+          for: 60s
+          labels:
+            severity: Critical
+            component: Backend
+          annotations:
+            summary: All Backend pods missing (instance {{ $labels.instance }})
+            description: "All Backend pods have disappeared.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

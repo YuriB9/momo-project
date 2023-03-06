@@ -1,0 +1,14 @@
+config:
+  logLevel: info
+  argocd:
+    grpcWeb: false
+    serverAddress: "https://argocd.btkv.tech"
+    insecure: true
+    plaintext: true
+  registries:
+  - name: Private Gitlab CR
+    prefix: gitlab.praktikum-services.ru:5050
+    api_url: https://gitlab.praktikum-services.ru:5050
+    credentials: pullsecret:argocd/momo-cr-lockbox
+    default: true
+    ping: no

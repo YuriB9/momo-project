@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: momo-infra-project
+  namespace: argocd
+  # Finaliser that ensures that the project is not deleted until any application does not reference it
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project description
+  description: Momo Store Infrastructure Project
+  destinations:
+    # Update your namespace
+    - namespace: momo-app
+      server: https://kubernetes.default.svc
+  sourceRepos:
+    # Make sure to add your repository here
+    - https://gitlab.praktikum-services.ru/std-009-060/momo-infra.git
+  # Deny all cluster-scoped resources from being created, except for Namespace
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+
+  # Allow all namespaced-scoped resources to be created, except for ResourceQuota, LimitRange, NetworkPolicy
+  namespaceResourceBlacklist:
+  - group: ''
+    kind: ResourceQuota
+  - group: ''
+    kind: LimitRange
+  - group: ''
+    kind: NetworkPolicy
+
+

@@ -1,0 +1,13 @@
+server:
+  ingress:
+    hosts: ["argocd.btkv.tech"]
+    enabled: true
+    annotations:
+      #kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    ingressClassName: nginx
+    tls:
+    - hosts:
+      - argocd.btkv.tech
+      secretName: momo-main-cert

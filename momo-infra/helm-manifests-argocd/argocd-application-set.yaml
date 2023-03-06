@@ -1,0 +1,52 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: momo-application-set
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      # git repository to get the variables from
+      repoURL: https://gitlab.praktikum-services.ru/std-009-060/momo-infra.git
+      # branch used to get the variables from
+      revision: master
+      directories:
+      # path to the directory that includes directories to read as variables
+      - path: helm-charts/momo-store
+  template:
+    metadata:
+      # basename is the name of the directory not the full path
+      name: '{{path.basename}}'
+      annotations:
+        argocd-image-updater.argoproj.io/write-back-method: git
+        argocd-image-updater.argoproj.io/git-branch: master
+        argocd-image-updater.argoproj.io/image-list: "front=gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-frontend, back=gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-backend"
+        argocd-image-updater.argoproj.io/front.helm.image-name: frontend.image
+        argocd-image-updater.argoproj.io/front.helm.image-tag: frontend.tag
+        argocd-image-updater.argoproj.io/back.helm.image-name: backend.image
+        argocd-image-updater.argoproj.io/back.helm.image-tag: backend.tag
+
+        argocd-image-updater.argoproj.io/front.update-strategy: latest
+        argocd-image-updater.argoproj.io/front.allow-tags: "regexp:[0-9].[0-9].[0-9]*"
+        argocd-image-updater.argoproj.io/front.force-update: "true"
+        argocd-image-updater.argoproj.io/back.update-strategy: latest
+        argocd-image-updater.argoproj.io/back.allow-tags: "regexp:[0-9].[0-9].[0-9]*"
+        argocd-image-updater.argoproj.io/back.force-update: "true"
+    spec:
+      project: momo-infra-project
+      syncPolicy:
+         automated: {}
+          #  prune: true
+          #  selfHeal: false
+          #  allowEmpty: false
+      source:
+        # source repo, in this example both repositories are the same
+        repoURL: https://gitlab.praktikum-services.ru/std-009-060/momo-infra.git
+        targetRevision: master
+        # path to read manifests from, here it's the full path not only the name of the directory
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        # different namespaces named after the directories names to be used as destinations
+        namespace: momo-app

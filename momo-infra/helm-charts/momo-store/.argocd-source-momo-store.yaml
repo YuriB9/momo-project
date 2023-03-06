@@ -1,0 +1,14 @@
+helm:
+  parameters:
+  - name: frontend.image
+    value: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-frontend
+    forcestring: true
+  - name: frontend.tag
+    value: 1.0.472430
+    forcestring: true
+  - name: backend.image
+    value: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-backend
+    forcestring: true
+  - name: backend.tag
+    value: 1.0.446502
+    forcestring: true

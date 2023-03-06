@@ -1,0 +1,53 @@
+---
+### Global Values if any ###
+global:
+  # -- Number of old ReplicaSets to retain
+  revisionHistoryLimit: 15
+
+frontend:
+  # -- If true, Frontend will be created
+  enabled: true
+
+  # -- Frontend server container image name
+  image: "gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-frontend"
+
+  # -- Frontend server container image tag (can be updated by argocd-image-updater)
+  tag: "1.0.472251"
+
+  # --Default image pull policy
+  pullPolicy: "Always"
+
+  ingress:
+
+    # -- If true, Nginx server Ingress will be created
+    enabled: true
+
+    # -- Nginx server Ingress annotations
+    annotations:
+      kubernetes.io/ingress.class: nginx
+
+    hosts:
+      # -- Ingress accepted hostnames
+      - host: "btkv.tech"
+        # -- Ingress accepted path
+        paths:
+        - /
+
+    # -- Nginx server Ingress TLS configuration
+    tls:
+      - hosts:
+        - btkv.tech
+        secretName: momo-main-cert
+
+backend:
+  # -- If true, Backend will be created
+  enabled: true
+
+  # -- Backend server container image name
+  image: "gitlab.praktikum-services.ru:5050/std-009-060/momo-store/momo-backend"
+
+  # -- Backend server container image tag (can be updated by argocd-image-updater)
+  tag: "1.0.446502"
+
+  # --Default image pull policy
+  pullPolicy: "Always"

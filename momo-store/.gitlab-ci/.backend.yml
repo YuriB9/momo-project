@@ -1,0 +1,123 @@
+include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
+
+stages:
+  - integration-test
+  - security-sast
+  - build
+  - security-container-scan
+  - security-sonar
+  - release
+
+.cache:
+  variables:
+    GOPATH: $CI_PROJECT_DIR/backend/.go
+  before_script:
+    - mkdir -p backend/.go
+  cache:
+    paths:
+      - .go/pkg/mod/
+
+test:
+  stage: integration-test
+  image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/golang:1.17
+  extends: .cache
+  script:
+    - cd backend
+    - go test -v ./...
+
+semgrep:
+  stage: security-sast
+  image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/semgrep:latest
+  rules:
+  # Scan changed files in MRs, (diff-aware scanning):
+  #- if: $CI_MERGE_REQUEST_IID
+  # Scan mainline (default) branches and report all findings.
+  #- if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+  # See more at semgrep.dev/explore.
+  variables:
+    SEMGREP_RULES: >-
+      p/golang
+      p/gosec
+      p/secrets
+      p/dockerfile
+      p/docker
+    SEMGREP_GITLAB_JSON: "1"
+    SEMGREP_ENABLE_VERSION_CHECK: "0"
+  script: semgrep ci --include=/backend/* --verbose --gitlab-sast > gl-sast-report.json || true
+  artifacts:
+    paths:
+      - gl-sast-report.json
+    expire_in: 1 week
+
+compile_backend_bin:
+  stage: build
+  image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/golang:1.17
+  extends: .cache
+  script:
+    - cd backend
+    - mkdir -p $CI_PROJECT_DIR/momo-store-${VERSION}/go-build
+    - go build -o $CI_PROJECT_DIR/momo-store-${VERSION}/go-build ./...
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/momo-store-${VERSION}/go-build
+
+build_backend_image:
+  stage: build
+  image:
+    name: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/kaniko-executor:v1.9.1-debug
+    entrypoint: [""]
+  variables:
+    CACHE_TTL: 2190h0m0s # three months
+    IMAGE_NAME: momo-backend
+    CONTEXT: "${CI_PROJECT_DIR}/backend"
+  script:
+    - >
+      /kaniko/executor
+      --build-arg VERSION=$VERSION
+      --context "${CONTEXT}/"
+      --dockerfile "${CONTEXT}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/$IMAGE_NAME:$VERSION"
+      --destination "${CI_REGISTRY_IMAGE}/$IMAGE_NAME:latest"
+      --cache=true
+      --cache-repo ${CI_REGISTRY_IMAGE}/$IMAGE_NAME
+      --cache-ttl $CACHE_TTL
+
+container_scanning:
+  stage: security-container-scan
+  needs: ["build_backend_image"]
+  variables:
+    CS_IMAGE: $CI_REGISTRY_IMAGE/momo-backend:$VERSION
+    GIT_STRATEGY: fetch
+    CS_DOCKERFILE_PATH: backend/Dockerfile
+
+sonarqube:
+  stage: security-sonar
+  image: gitlab.praktikum-services.ru:5050/std-009-060/momo-store/sonar-scanner-cli:4.8.0
+  allow_failure: true
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - cd backend
+    - >
+      sonar-scanner
+      -Dsonar.projectKey=09_YURIBATKOV_MOMO_BACKEND
+      -Dsonar.projectName=09_YURIBATKOV_MOMO_BACKEND
+      -Dsonar.host.url=${SONAR_HOST_URL}
+      -Dsonar.login=${SONAR_TOKEN_MOMO_BACK}
+
+upload_release:
+  stage: release
+  dependencies:
+    - compile_backend_bin
+  script:
+    - tar czvf momo-store-${VERSION}.tar.gz momo-store-${VERSION}/go-build
+    - >
+      curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}"
+      --upload-file momo-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/repository/09-momo-store-batkov-yuriy-backend/momo-store/${VERSION}/momo-store-backend-${VERSION}.tar.gz

@@ -1,0 +1,56 @@
+server:
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    hosts: ["prometheus.btkv.tech"]
+    paths: ["/"]
+    tls:
+      - secretName: momo-main-cert
+        hosts:
+          - prometheus.btkv.tech
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - host: alertmanager.btkv.tech
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: momo-main-cert
+        hosts:
+          - alertmanager.btkv.tech
+  config:
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 30m
+      receiver: "telegram"
+      routes:
+        - receiver: "telegram"
+          group_wait: 10s
+          match_re:
+            severity: critical|warning
+          continue: true
+    receivers:
+      - name: "telegram"
+        telegram_configs:
+        - bot_token: 'A valid string bot token is required'
+          api_url: 'https://api.telegram.org'
+          chat_id: 'A valid int chat id is required'
+          parse_mode: ''
+          message: "[std-009-060 Momo] '{{ .GroupLabels.alertname }}' alert {{ .Status }}\n Severity: {{ .CommonLabels.severity }}\n Component: {{ .CommonLabels.component }}\n {{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+
+
+kube-state-metrics:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false

@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: momo-app
+  label:
+    momo-secret-cert: yc-auth-cert

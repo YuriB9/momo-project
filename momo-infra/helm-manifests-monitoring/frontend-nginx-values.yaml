@@ -1,0 +1,2 @@
+
+nginxServer: "http://frontend-service.momo-app.svc.cluster.local:80/stub_status"

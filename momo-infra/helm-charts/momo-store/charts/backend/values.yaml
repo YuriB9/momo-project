@@ -1,0 +1,65 @@
+# Default values for backend.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Global image pull secrets
+imagePullSecrets:
+  - name: "momo-cr-lockbox"
+
+# -- Pod Annotations for the deployment
+podAnnotations:
+  prometheus.io/path: /metrics
+  prometheus.io/port: "8081"
+  prometheus.io/scrape: "true"
+
+service:
+  # -- Kubernetes service type
+  type: ClusterIP
+
+  # -- Kubernetes port where service is exposed
+  port: 8081
+
+# -- The deployment strategy to use to replace existing pods with new ones
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 20%
+
+# -- Pod memory and cpu resource settings for the deployment
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "500m"
+  limits:
+    memory: "512Mi"
+    cpu: "1000m"
+
+livenessProbe:
+  tcpSocket:
+    port: 8081
+
+  # -- Number of seconds after the container has started before probe is initiated
+  initialDelaySeconds: 15
+
+  # -- How often (in seconds) to perform the probe
+  periodSeconds: 30
+
+  # -- Number of seconds after which the probe times out
+  timeoutSeconds: 2
+
+  # -- Minimum consecutive failures for the probe to be considered failed after having succeeded
+  failureThreshold: 6
+
+# -- The number of pods to run
+replicaCount: 1
+
+autoscaling:
+  # -- Enable Horizontal Pod Autoscaler for the repo server
+  enabled: false
+
+  # -- Minimum number of replicas for the repo server
+  minReplicas: 2
+
+  # -- Maximum number of replicas for the repo server
+  maxReplicas: 3

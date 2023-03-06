@@ -1,0 +1,62 @@
+# Default values for frontend.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Global image pull secrets
+imagePullSecrets:
+  - name: "momo-cr-lockbox"
+
+# -- Pod Annotations for the deployment
+podAnnotations: {}
+
+service:
+  # -- Kubernetes service type
+  type: ClusterIP
+
+  # -- Kubernetes port where service is exposed
+  port: 80
+
+# -- The deployment strategy to use to replace existing pods with new ones
+strategy:
+  type: Recreate
+
+# -- Pod memory and cpu resource settings for the deployment
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "250m"
+  limits:
+    memory: "128Mi"
+    cpu: "500m"
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+
+  # -- Number of seconds after the container has started before probe is initiated
+  initialDelaySeconds: 15
+
+  # -- How often (in seconds) to perform the probe
+  periodSeconds: 30
+
+  # -- Number of seconds after which the probe times out
+  timeoutSeconds: 1
+
+  # -- Minimum consecutive failures for the probe to be considered failed after having succeeded
+  failureThreshold: 6
+
+readinessProbe: {}
+
+# -- The number of pods to run
+replicaCount: 1
+
+autoscaling:
+  # -- Enable Horizontal Pod Autoscaler for the repo server
+  enabled: false
+
+  # -- Minimum number of replicas for the repo server
+  minReplicas: 1
+
+  # -- Maximum number of replicas for the repo server
+  maxReplicas: 2

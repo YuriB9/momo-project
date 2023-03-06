@@ -1,0 +1,6 @@
+.gitlab-ci.yml
+.env
+Dockerfile
+*.sh
+*.yml
+*.service
